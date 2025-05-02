@@ -22,8 +22,8 @@ const peerConfigConnections = {
 };
 
 export default function VideoMeetComponent() {
-  var socketRef = useRef();
-  let socketIdRef = useRef();
+  const socketRef = useRef(null);
+  const socketIdRef = useRef(null);
 
   let localVideoref = useRef(null);
   
@@ -47,7 +47,7 @@ export default function VideoMeetComponent() {
 
   let [message, setMessage] = useState("");
 
-  let [newMessages, setNewMessages] = useState(3);
+  let [newMessages, setNewMessages] = useState(0);
 
   let [askForUsername, setAskForUsername] = useState(true);
 
@@ -575,68 +575,76 @@ export default function VideoMeetComponent() {
         </div>
       ) : (
         <div className={styles.meetVideoContainer}>
-          {/* Chat Sidebar */}
-          {showModal && (
-            <div className={styles.chatRoom}>
-              <div className={styles.chatContainer}>
-                <h2>Chat</h2>
+        {/* Chat Sidebar */}
+        {showModal && (
+          <div className={styles.chatRoom}>
+            <div className={styles.chatContainer}>
+              <h2>Chat</h2>
 
-                <div className={styles.chattingDisplay}>
-                  {messages.length ? (
-                    messages.map((item, index) => (
-                      <div key={index} style={{ marginBottom: "10px" }}>
-                        <p style={{ fontWeight: "bold" }}>{item.sender}</p>
-                        <p>{item.data}</p>
-                      </div>
-                    ))
-                  ) : (
-                    <p>No messages yet</p>
-                  )}
-                </div>
+              <div className={styles.chattingDisplay}>
+                {messages.length ? (
+                  messages.map((item, index) => (
+                    <div key={index} style={{ marginBottom: "10px" }}>
+                      <p style={{ fontWeight: "bold" }}>{item.sender}</p>
+                      <p>{item.data}</p>
+                    </div>
+                  ))
+                ) : (
+                  <p>No messages yet</p>
+                )}
+              </div>
 
-                <div className={styles.chattingArea}>
-                  <TextField
-                    fullWidth
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    label="Type a message"
-                  />
-                  <Button variant="contained" onClick={sendMessage}>
-                    Send
-                  </Button>
-                </div>
+              <div className={styles.chattingArea}>
+                <TextField
+                  fullWidth
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  label="Type a message"
+                />
+                <Button variant="contained" onClick={sendMessage}>
+                  Send
+                </Button>
               </div>
             </div>
-          )}
-
-          {/* Video Display Area */}
-          <div className={styles.videoArea}>
-            {videos.map((video) => (
-              <video
-                key={video.socketId}
-                data-socket={video.socketId}
-                ref={(ref) => {
-                  if (ref && video.stream) ref.srcObject = video.stream;
-                }}
-                autoPlay
-              />
-            ))}
           </div>
+        )}
 
-          {video ? (
-            <video
-              className={styles.meetUserVideo}
-              ref={localVideoref}
-              autoPlay
-              muted
-            />
-          ) : (
-            <div className={styles.meetUserVideoOff}>
-              <p style={{ textAlign: "center", paddingTop: "40%" }}>
-                Camera Off
-              </p>
-            </div>
-          )}
+       
+        <div
+  className={`${styles.videoArea} 
+    ${videos.length === 1 ? styles.twoUserMode : ""} 
+    ${showModal ? styles.chatOpen : ""}
+  `}
+>
+
+  {videos.map((video) => (
+    <video
+      key={video.socketId}
+      data-socket={video.socketId}
+      ref={(ref) => {
+        if (ref && video.stream) ref.srcObject = video.stream;
+      }}
+      autoPlay
+    />
+  ))}
+</div>
+
+
+        {video ? (
+          <video
+            className={styles.meetUserVideo}
+            ref={localVideoref}
+            autoPlay
+            muted
+          />
+        ) : (
+          <div className={styles.meetUserVideoOff}>
+            <p style={{ textAlign: "center", paddingTop: "30%" }}>
+              Camera Off
+            </p>
+          </div>
+        )}
+      
         
 
           

@@ -37,7 +37,7 @@ const login = async (req, res) => {
 }
 
 
-const register = async (req, res) => {
+const signup = async (req, res) => {
     const { name, username, password } = req.body;
 
 
@@ -98,4 +98,4 @@ const addToHistory = async (req, res) => {
 }
 
 
-export { login, register, getUserHistory, addToHistory }
+export { login, signup, getUserHistory, addToHistory }

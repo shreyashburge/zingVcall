@@ -13,6 +13,12 @@ import StopScreenShareIcon from "@mui/icons-material/StopScreenShare";
 import ChatIcon from "@mui/icons-material/Chat";
 import server from "../enviroment";
 import { FaVideo, FaVideoSlash, FaMicrophone, FaMicrophoneSlash, FaPhoneSlash, FaDesktop } from 'react-icons/fa';
+
+  
+  
+
+
+
 const server_url = server;
 
 var connections = {};
@@ -22,6 +28,7 @@ const peerConfigConnections = {
 };
 
 export default function VideoMeetComponent() {
+  const [showQuiz, setShowQuiz] = useState(false);
   const socketRef = useRef(null);
   const socketIdRef = useRef(null);
 
@@ -66,7 +73,8 @@ export default function VideoMeetComponent() {
   useEffect(() => {
     console.log("HELLO");
     getPermissions();
-  });
+  }, []); // Empty array ensures it only runs once
+  
 
   let getDislayMedia = () => {
     if (screen) {
@@ -133,12 +141,7 @@ export default function VideoMeetComponent() {
       console.log("SET STATE HAS ", video, audio);
     }
   }, [video, audio]);
-  // let getMedia = () => {
-  //     setVideo(videoAvailable);
-  //     setAudio(audioAvailable);
-  //     connectToSocketServer();
-
-  // }
+ 
   const getMedia = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -160,73 +163,79 @@ export default function VideoMeetComponent() {
     }
   };
 
+  
+
   let getUserMediaSuccess = (stream) => {
-    try {
+  try {
+    if (window.localStream && window.localStream.getTracks) {
       window.localStream.getTracks().forEach((track) => track.stop());
-    } catch (e) {
-      console.log(e);
     }
+  } catch (e) {
+    console.log("Error stopping old stream tracks:", e);
+  }
 
-    window.localStream = stream;
-    localVideoref.current.srcObject = stream;
+  // Assign the new stream
+  window.localStream = stream;
+  localVideoref.current.srcObject = stream;
 
-    for (let id in connections) {
-      if (id === socketIdRef.current) continue;
+  // Send stream to all other peers
+  for (let id in connections) {
+    if (id === socketIdRef.current) continue;
 
-      connections[id].addStream(window.localStream);
+    connections[id].addStream(window.localStream);
 
-      connections[id].createOffer().then((description) => {
-        console.log(description);
-        connections[id]
-          .setLocalDescription(description)
-          .then(() => {
-            socketRef.current.emit(
-              "signal",
-              id,
-              JSON.stringify({ sdp: connections[id].localDescription })
-            );
-          })
-          .catch((e) => console.log(e));
-      });
-    }
-
-    stream.getTracks().forEach(
-      (track) =>
-        (track.onended = () => {
-          setVideo(false);
-          setAudio(false);
-
-          try {
-            let tracks = localVideoref.current.srcObject.getTracks();
-            tracks.forEach((track) => track.stop());
-          } catch (e) {
-            console.log(e);
-          }
-
-          let blackSilence = (...args) =>
-            new MediaStream([black(...args), silence()]);
-          window.localStream = blackSilence();
-          localVideoref.current.srcObject = window.localStream;
-
-          for (let id in connections) {
-            connections[id].addStream(window.localStream);
-
-            connections[id].createOffer().then((description) => {
-              connections[id]
-                .setLocalDescription(description)
-                .then(() => {
-                  socketRef.current.emit(
-                    "signal",
-                    id,
-                    JSON.stringify({ sdp: connections[id].localDescription })
-                  );
-                })
-                .catch((e) => console.log(e));
-            });
-          }
+    connections[id].createOffer().then((description) => {
+      connections[id]
+        .setLocalDescription(description)
+        .then(() => {
+          socketRef.current.emit(
+            "signal",
+            id,
+            JSON.stringify({ sdp: connections[id].localDescription })
+          );
         })
-    );
-  };
+        .catch((e) => console.log("Error setting local description:", e));
+    });
+  }
+
+  // Handle track end event (camera/mic stops)
+  stream.getTracks().forEach((track) => {
+    track.onended = () => {
+      setVideo(false);
+      setAudio(false);
+
+      try {
+        const tracks = localVideoref.current?.srcObject?.getTracks?.() || [];
+        tracks.forEach((track) => track.stop());
+      } catch (e) {
+        console.log("Error stopping tracks after ended:", e);
+      }
+
+      let blackSilence = (...args) =>
+        new MediaStream([black(...args), silence()]);
+      window.localStream = blackSilence();
+      localVideoref.current.srcObject = window.localStream;
+
+      for (let id in connections) {
+        connections[id].addStream(window.localStream);
+
+        connections[id].createOffer().then((description) => {
+          connections[id]
+            .setLocalDescription(description)
+            .then(() => {
+              socketRef.current.emit(
+                "signal",
+                id,
+                JSON.stringify({ sdp: connections[id].localDescription })
+              );
+            })
+            .catch((e) => console.log(e));
+        });
+      }
+    };
+  });
+};
+
 
   let getUserMedia = () => {
     if ((video && videoAvailable) || (audio && audioAvailable)) {
@@ -470,9 +479,13 @@ export default function VideoMeetComponent() {
   
         // Hide or show local video in UI
         if (!videoTrack.enabled) {
-          localVideoref.current.srcObject = null; // Hide local video
+          if (localVideoref.current) {
+            localVideoref.current.srcObject = null;
+          }
         } else {
-          localVideoref.current.srcObject = stream; // Show it again
+          if (localVideoref.current) {
+            localVideoref.current.srcObject = stream;
+          }
         }
   
         // Notify other users via socket
@@ -645,6 +658,10 @@ export default function VideoMeetComponent() {
           </div>
         )}
       
+      
+    
+  
+
         
 
           

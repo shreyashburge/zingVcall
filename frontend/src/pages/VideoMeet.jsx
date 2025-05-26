@@ -20,6 +20,7 @@ import { FaVideo, FaVideoSlash, FaMicrophone, FaMicrophoneSlash, FaPhoneSlash, F
 
 
 const server_url = server;
+const navigate = useNavigate();
 
 var connections = {};
 
@@ -524,12 +525,20 @@ export default function VideoMeetComponent() {
     setScreen(!screen);
   };
 
-  let handleEndCall = () => {
+  // let handleEndCall = () => {
+  //   try {
+  //     let tracks = localVideoref.current.srcObject.getTracks();
+  //     tracks.forEach((track) => track.stop());
+  //   } catch (e) {}
+  //   window.location.href = "/home";
+  // };
+
+   const handleEndCall = () => {
     try {
       let tracks = localVideoref.current.srcObject.getTracks();
       tracks.forEach((track) => track.stop());
     } catch (e) {}
-    window.location.href = "/home";
+    navigate("/home");  // Use React Router navigation instead of window.location.href
   };
 
   let openChat = () => {
